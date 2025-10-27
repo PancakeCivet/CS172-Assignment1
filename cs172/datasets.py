@@ -10,6 +10,9 @@ import numpy as np
 from torch.utils.data import Dataset
 from torchvision import transforms
 from PIL import Image
+import torch
+
+VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp"}
 
 
 class ImageDataset(Dataset):
@@ -25,14 +28,21 @@ class ImageDataset(Dataset):
         """
         self.imgdir = imgdir
         self.transform = transform
-        self.imgs = os.listdir(imgdir)
+        self.imgs = sorted(
+            [
+                fname
+                for fname in os.listdir(imgdir)
+                if os.path.isfile(os.path.join(imgdir, fname))
+                and os.path.splitext(fname)[1].lower() in VALID_EXTENSIONS
+            ]
+        )
         self.resize = transforms.Resize((227, 227))
 
     def __len__(self):
         # ====================== TO DO START ========================
         # Return the number of images in the dataset
         # ===========================================================
-        return ...
+        return len(self.imgs)
         # ====================== TO DO END ==========================
 
     def __getitem__(self, idx):
@@ -49,12 +59,32 @@ class ImageDataset(Dataset):
         # Apply the transform on img if it exists
         # label (from list `self.imgs`) is like '12345#2.png'
         # ===========================================================
-        img = ...
-        label = ...
+        if self.augment_transform is not None:
+            img = self.augment_transform(img)
+
+        if self.transform is not None:
+            img = self.transform(img)
+        else:
+            img = self.base_transform(img)
+
+        if isinstance(img, np.ndarray):
+            img = torch.from_numpy(img)
+        elif isinstance(img, Image.Image):
+            img = self.base_transform(img)
+
+        img = img.float()
+
+        fname = self.imgs[idx]
+        stem = os.path.splitext(fname)[0]
+        digits = stem.split("#")[0]
+
+        label = torch.zeros((5, 10), dtype=torch.float32)
+        for i, ch in enumerate(digits):
+            label[i, int(ch)] = 1.0
         # ====================== TO DO END ==========================
 
         return img, label
-    
+
     def get_samples(self, idx=0):
         assert idx < self.__len__()
 

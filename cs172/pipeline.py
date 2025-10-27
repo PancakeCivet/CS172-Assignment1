@@ -4,11 +4,11 @@ from tqdm.notebook import tqdm
 from torchmetrics import MetricCollection
 from cs172.metrics import ImageAccuracy, DigitAccuracy
 
-def train(model, device, dataloader, lr = 1e-3, weight_decay = 0.05, num_epoch = 10):
-    metric_collection = MetricCollection({
-        "image_accuracy": ImageAccuracy(),
-        "digit_accuracy": DigitAccuracy()
-    }).to(device)
+
+def train(model, device, dataloader, lr=1e-3, weight_decay=0.05, num_epoch=10):
+    metric_collection = MetricCollection(
+        {"image_accuracy": ImageAccuracy(), "digit_accuracy": DigitAccuracy()}
+    ).to(device)
 
     model.to(device)
     model.train()
@@ -18,10 +18,15 @@ def train(model, device, dataloader, lr = 1e-3, weight_decay = 0.05, num_epoch =
     # Adam is a recommended optimizer, you can try different learning rate and weight_decay
     # You can use cross entropy as a loss function
     # ===================================================
-    optimizer = ...
-    loss_func = ...
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=lr,
+        weight_decay=weight_decay,
+        amsgrad=True,
+    )
+    loss_func = torch.nn.CrossEntropyLoss()
     # =================== TO DO END =====================
-    
+
     # If you implement the previous code correctly, 10 epoch should be enough
     for epoch in range(num_epoch):
         sum_loss = 0
@@ -35,17 +40,15 @@ def train(model, device, dataloader, lr = 1e-3, weight_decay = 0.05, num_epoch =
             # =================== TO DO END =====================
             sum_loss += loss.item()
             metric_collection.update(pred, label)
-        print(f"loss for epoch {epoch}:", sum_loss/len(dataloader))
+        print(f"loss for epoch {epoch}:", sum_loss / len(dataloader))
         for key, value in metric_collection.compute().items():
             print(f"{key} for epoch {epoch}:", value.item())
 
 
-
 def test(model, device, dataloader):
-    metric_collection = MetricCollection({
-        "image_accuracy": ImageAccuracy(),
-        "digit_accuracy": DigitAccuracy()
-    }).to(device)
+    metric_collection = MetricCollection(
+        {"image_accuracy": ImageAccuracy(), "digit_accuracy": DigitAccuracy()}
+    ).to(device)
 
     model.to(device)
     model.eval()
