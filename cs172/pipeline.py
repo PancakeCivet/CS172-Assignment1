@@ -35,8 +35,13 @@ def train(model, device, dataloader, lr=1e-3, weight_decay=0.05, num_epoch=10):
             # ================== TO DO START ====================
             # Get the prediction through the model and call the optimizer
             # ===================================================
-            pred = ...
-            loss = ...
+            optimizer.zero_grad()
+            pred = model(img)
+            logits = pred.reshape(pred.size(0), 5, 10)
+            targets = label.reshape(label.size(0), 5, 10).argmax(dim=-1)
+            loss = loss_func(logits.reshape(-1, 10), targets.reshape(-1))
+            loss.backward()
+            optimizer.step()
             # =================== TO DO END =====================
             sum_loss += loss.item()
             metric_collection.update(pred, label)
