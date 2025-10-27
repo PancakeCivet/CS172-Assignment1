@@ -1,0 +1,9 @@
+--extra-index-url https://download.pytorch.org/whl/cu117
+numpy~=1.23.3
+torch==1.13.1+cu117
+torchvision==0.14.1+cu117
+torchaudio==0.13.1
+matplotlib==3.7.5
+jupyter==1.1.1
+tqdm==4.66.5
+torchmetrics==1.4.3
