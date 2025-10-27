@@ -27,6 +27,7 @@ def train(model, device, dataloader, lr = 1e-3, weight_decay = 0.05, num_epoch =
     # If you implement the previous code correctly, 10 epoch should be enough
     for epoch in range(num_epoch):
         sum_loss = 0
+        metric_collection.reset()
         for img, label in tqdm(dataloader):
             img, label = img.to(device), label.to(device)
             # ================== TO DO START ====================
@@ -35,13 +36,13 @@ def train(model, device, dataloader, lr = 1e-3, weight_decay = 0.05, num_epoch =
             optimizer.zero_grad()
             pred = model(img)
             logits = pred.view(-1, 10)
-            targets = label.argmax(dim=-1).view(-1)
+            targets = label.argmax(dim=-1).long().view(-1)
             loss = loss_func(logits, targets)
             loss.backward()
             optimizer.step()
             # =================== TO DO END =====================
             sum_loss += loss.item()
-            metric_collection.update(pred, label)
+            metric_collection.update(pred.detach(), label)
         print(f"loss for epoch {epoch}:", sum_loss/len(dataloader))
         for key, value in metric_collection.compute().items():
             print(f"{key} for epoch {epoch}:", value.item())
