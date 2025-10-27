@@ -4,11 +4,11 @@ from tqdm.notebook import tqdm
 from torchmetrics import MetricCollection
 from cs172.metrics import ImageAccuracy, DigitAccuracy
 
-
-def train(model, device, dataloader, lr=1e-3, weight_decay=0.05, num_epoch=10):
-    metric_collection = MetricCollection(
-        {"image_accuracy": ImageAccuracy(), "digit_accuracy": DigitAccuracy()}
-    ).to(device)
+def train(model, device, dataloader, lr = 1e-3, weight_decay = 0.05, num_epoch = 10):
+    metric_collection = MetricCollection({
+        "image_accuracy": ImageAccuracy(),
+        "digit_accuracy": DigitAccuracy()
+    }).to(device)
 
     model.to(device)
     model.train()
@@ -19,14 +19,11 @@ def train(model, device, dataloader, lr=1e-3, weight_decay=0.05, num_epoch=10):
     # You can use cross entropy as a loss function
     # ===================================================
     optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=lr,
-        weight_decay=weight_decay,
-        amsgrad=True,
+        model.parameters(), lr=lr, weight_decay=weight_decay
     )
     loss_func = torch.nn.CrossEntropyLoss()
     # =================== TO DO END =====================
-
+    
     # If you implement the previous code correctly, 10 epoch should be enough
     for epoch in range(num_epoch):
         sum_loss = 0
@@ -37,23 +34,25 @@ def train(model, device, dataloader, lr=1e-3, weight_decay=0.05, num_epoch=10):
             # ===================================================
             optimizer.zero_grad()
             pred = model(img)
-            logits = pred.reshape(pred.size(0), 5, 10)
-            targets = label.reshape(label.size(0), 5, 10).argmax(dim=-1)
-            loss = loss_func(logits.reshape(-1, 10), targets.reshape(-1))
+            logits = pred.view(-1, 10)
+            targets = label.argmax(dim=-1).view(-1)
+            loss = loss_func(logits, targets)
             loss.backward()
             optimizer.step()
             # =================== TO DO END =====================
             sum_loss += loss.item()
             metric_collection.update(pred, label)
-        print(f"loss for epoch {epoch}:", sum_loss / len(dataloader))
+        print(f"loss for epoch {epoch}:", sum_loss/len(dataloader))
         for key, value in metric_collection.compute().items():
             print(f"{key} for epoch {epoch}:", value.item())
 
 
+
 def test(model, device, dataloader):
-    metric_collection = MetricCollection(
-        {"image_accuracy": ImageAccuracy(), "digit_accuracy": DigitAccuracy()}
-    ).to(device)
+    metric_collection = MetricCollection({
+        "image_accuracy": ImageAccuracy(),
+        "digit_accuracy": DigitAccuracy()
+    }).to(device)
 
     model.to(device)
     model.eval()
