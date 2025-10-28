@@ -21,3 +21,5 @@ __pycache__/
 
 # Data Template
 data/
+
+model_weights.pth
