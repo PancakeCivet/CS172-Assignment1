@@ -14,6 +14,12 @@ def generate_verification(
     save_folder=None,
     image_size=(260, 80),
     need_rotate=True,
+    enable_color=True,
+    enable_noise=True,
+    enable_lines=True,
+    base_color=(0, 0, 0),
+    noise_ratio=0.02,
+    border_width=2,
 ):
     num = 5  # generate 5 digits
     width, height = image_size
@@ -31,10 +37,17 @@ def generate_verification(
     # char_colors = [(r1, g1, b1), ..., (rk, gk, bk)]
     # RGB should be int and in (0, 200) in case it is too similar to white
     # ===========================================================
-    char_colors = [
-        (random.randint(0, 199), random.randint(0, 199), random.randint(0, 199))
-        for _ in range(num)
-    ]
+    if enable_color:
+        char_colors = [
+            (
+                random.randint(0, 199),
+                random.randint(0, 199),
+                random.randint(0, 199),
+            )
+            for _ in range(num)
+        ]
+    else:
+        char_colors = [base_color for _ in range(num)]
     # ======================= TO DO END =========================
 
     # to set random char location
@@ -108,40 +121,43 @@ def generate_verification(
             draw.text((x, y), char, fill=char_colors[i], font=fonts[i])
             x += char_width[i]
 
-    # add random colored lines
-    for _ in range(random.randint(0, 5)):  # random number of lines (0, 5)
-        # ====================== TO DO START ========================
-        # lines should have random color and random start, end position
-        # ===========================================================
-        line_color = (
-            random.randint(0, 199),
-            random.randint(0, 199),
-            random.randint(0, 199),
-        )
-        start = (random.randint(0, width - 1), random.randint(0, height - 1))
-        end = (random.randint(0, width - 1), random.randint(0, height - 1))
-        # ======================= TO DO END =========================
-        draw.line([start, end], fill=line_color, width=random.randint(1, 2))
+    if enable_lines:
+        # add random colored lines
+        for _ in range(random.randint(0, 5)):  # random number of lines (0, 5)
+            # ====================== TO DO START ========================
+            # lines should have random color and random start, end position
+            # ===========================================================
+            line_color = (
+                random.randint(0, 199),
+                random.randint(0, 199),
+                random.randint(0, 199),
+            )
+            start = (random.randint(0, width - 1), random.randint(0, height - 1))
+            end = (random.randint(0, width - 1), random.randint(0, height - 1))
+            # ======================= TO DO END =========================
+            draw.line([start, end], fill=line_color, width=random.randint(1, 2))
 
-    # add salt and pepper noise
-    noise_raito = 0.02  # 2% of the pixels
-    for _ in range(int(width * height * noise_raito)):
-        # ====================== TO DO START ========================
-        # noise should have random color and random position
-        # ===========================================================
-        x, y = random.randint(0, width - 1), random.randint(0, height - 1)
-        color = (
-            random.randint(0, 255),
-            random.randint(0, 255),
-            random.randint(0, 255),
-        )
-        # ======================= TO DO END =========================
-        image.putpixel((x, y), color)
+    if enable_noise and noise_ratio > 0:
+        # add salt and pepper noise
+        for _ in range(int(width * height * noise_ratio)):
+            # ====================== TO DO START ========================
+            # noise should have random color and random position
+            # ===========================================================
+            x, y = random.randint(0, width - 1), random.randint(0, height - 1)
+            color = (
+                random.randint(0, 255),
+                random.randint(0, 255),
+                random.randint(0, 255),
+            )
+            # ======================= TO DO END =========================
+            image.putpixel((x, y), color)
 
     # Add a black border
     # If you don't like it, it's okay to comment it
-    border_width = 2
-    draw.rectangle([0, 0, width - 1, height - 1], outline="black", width=border_width)
+    if border_width:
+        draw.rectangle(
+            [0, 0, width - 1, height - 1], outline="black", width=border_width
+        )
 
     # save image if save_folder is given
     if save_folder:
@@ -169,9 +185,23 @@ def generate_verification(
 def save_certification_data(image_size, data_num, save_folder, need_rotate):
     create_and_empty_folder(save_folder)
 
-    for _ in tqdm(range(data_num)):
-        generate_verification(
-            image_size=image_size,
-            need_rotate=need_rotate,
-            save_folder=save_folder,
-        )
+    tiers = [
+        dict(enable_color=False, enable_noise=False, enable_lines=False, need_rotate=False),
+        dict(enable_color=True, enable_noise=False, enable_lines=False, need_rotate=False),
+        dict(enable_color=True, enable_noise=True, enable_lines=False, need_rotate=False),
+        dict(enable_color=True, enable_noise=True, enable_lines=True, need_rotate=False),
+        dict(enable_color=True, enable_noise=True, enable_lines=True, need_rotate=need_rotate),
+    ]
+
+    base_count, remainder = divmod(data_num, len(tiers))
+    counts = [base_count + (1 if idx < remainder else 0) for idx in range(len(tiers))]
+
+    with tqdm(total=data_num) as progress:
+        for tier, tier_count in zip(tiers, counts):
+            for _ in range(tier_count):
+                generate_verification(
+                    image_size=image_size,
+                    save_folder=save_folder,
+                    **tier,
+                )
+                progress.update(1)
