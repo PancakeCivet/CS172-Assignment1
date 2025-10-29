@@ -7,6 +7,19 @@ import string
 import torch
 
 
+from torchvision import transforms
+import random
+
+
+class RandomGrayscaleOrColor:
+
+    def __call__(self, img):
+        if random.random() < 0.5:
+            return transforms.functional.rgb_to_grayscale(img, num_output_channels=3)
+        else:
+            return img
+
+
 class ImageDataset_alpha(Dataset):
     """
     Custom dataset for alphabetic CAPTCHAs (A–Z + a–z), each containing 5 letters.
