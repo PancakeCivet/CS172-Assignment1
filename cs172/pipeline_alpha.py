@@ -4,7 +4,7 @@ from torchmetrics import MetricCollection
 from cs172.metrics_alpha import ImageAccuracy_alpha, DigitAccuracy_alpha
 
 
-def train_alpha(model, device, dataloader, lr=1e-3, weight_decay=0.05, num_epoch=10):
+def train_alpha(model, device, dataloader, lr=5e-4, weight_decay=5e-4, num_epoch=30):
     """
     Train the model on alphabetic CAPTCHA dataset (A–Z + a–z)
     Each image contains 5 letters, each letter has 52 classes.
@@ -21,6 +21,7 @@ def train_alpha(model, device, dataloader, lr=1e-3, weight_decay=0.05, num_epoch
     model.train()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
     loss_func = torch.nn.CrossEntropyLoss()
 
     for epoch in range(num_epoch):
@@ -29,14 +30,15 @@ def train_alpha(model, device, dataloader, lr=1e-3, weight_decay=0.05, num_epoch
 
         for img, label in tqdm(dataloader, desc=f"Epoch {epoch+1}/{num_epoch}"):
             img, label = img.to(device), label.to(device)
-
             optimizer.zero_grad()
-            pred = model(img)
-            pred = pred.view(-1, 5, 52)
-
+            pred = model(img).view(-1, 5, 52)
             targets = label.argmax(dim=-1).long()
 
-            loss = loss_func(pred.permute(0, 2, 1), targets)
+            loss = 0.0
+            for i in range(5):
+                loss += loss_func(pred[:, i, :], targets[:, i])
+            loss /= 5
+
             loss.backward()
             optimizer.step()
 
@@ -46,6 +48,7 @@ def train_alpha(model, device, dataloader, lr=1e-3, weight_decay=0.05, num_epoch
         print(f"Epoch {epoch+1}: avg loss = {sum_loss/len(dataloader):.4f}")
         for key, value in metric_collection.compute().items():
             print(f"  {key}: {value.item():.4f}")
+        scheduler.step()
 
 
 def test_alpha(model, device, dataloader):

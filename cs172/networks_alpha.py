@@ -84,7 +84,8 @@ class ResNet18_alpha(nn.Module):
         self.layer4 = self._make_layer(256, 512, blocks=2, stride=2)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512, num_classes)  # ✅ num_classes = 260
+        self.dropout = nn.Dropout(0.5)
+        self.fc = nn.Linear(512, num_classes)
 
     def _make_layer(self, in_channels, out_channels, blocks, stride=1):
         layers = [SimpleResBlock(in_channels, out_channels, stride)]
@@ -105,5 +106,6 @@ class ResNet18_alpha(nn.Module):
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
+        x = self.dropout(x)
         x = self.fc(x)
         return x

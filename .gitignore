@@ -4,6 +4,8 @@
 # Logs
 *.log
 
+
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -21,5 +23,4 @@ __pycache__/
 
 # Data Template
 data/
-
-model_weights.pth
+data_alpha/
