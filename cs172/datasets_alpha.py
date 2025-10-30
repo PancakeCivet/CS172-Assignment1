@@ -37,8 +37,8 @@ class ImageDataset_alpha(Dataset):
         self.imgs = os.listdir(imgdir)
         self.resize = transforms.Resize((227, 227))
 
-        self.charset = string.ascii_letters
-        self.num_classes = len(self.charset)  # 52
+        self.charset = string.ascii_uppercase + string.ascii_lowercase
+        self.num_classes = len(self.charset)
 
     def __len__(self):
         return len(self.imgs)
